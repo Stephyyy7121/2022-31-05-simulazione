@@ -6,6 +6,12 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+
+import javax.naming.spi.DirStateFactory.Result;
+
+import com.javadocmd.simplelatlng.LatLng;
+
+import it.polito.tdp.nyc.model.City;
 import it.polito.tdp.nyc.model.Hotspot;
 
 public class NYCDao {
@@ -34,6 +40,65 @@ public class NYCDao {
 		}
 
 		return result;
+	}
+	
+	
+	//metood che permette di estrarre dal DB tutti provider --> da inserire nella tendina 
+	
+	public List<String> getAllProvider() {
+		
+		String sql = "SELECT DISTINCT Provider "
+				+ "FROM nyc_wifi_hotspot_locations ";
+		
+		List<String> result = new ArrayList<String>();
+		
+		Connection conn = DBConnect.getConnection();
+		try {
+			PreparedStatement st = conn.prepareStatement(sql);
+			
+			ResultSet rs = st.executeQuery();
+			while (rs.next()) {
+				result.add(rs.getString("Provider"));
+			}
+			
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return null;
+		}
+		
+		return result;
+	}
+	
+	//metodo per estrarre i quartieri che hanno un determianto provider
+	
+	public List<City> getAllQuartieri(String provider) {
+		
+		String sql = "SELECT Distinct city, AVG(Latitude) as Lat, AVG(Longitude) AS Lng "
+				+ "FROM nyc_wifi_hotspot_locations "
+				+ "WHERE provider= ? "
+				+ "GROUP BY city "
+				+ "ORDER BY city";
+		
+		List<City> result = new ArrayList<City>();
+		
+		Connection conn = DBConnect.getConnection();
+		try {
+			PreparedStatement st = conn.prepareStatement(sql);
+			st.setString(1, provider);
+			ResultSet rs = st.executeQuery();
+			while (rs.next()) {
+				result.add(new City(rs.getString("City"), new LatLng(rs.getDouble("Lat"), rs.getDouble("Lng"))));
+			}
+			
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return null;
+		}
+		
+		return result;
+		
 	}
 	
 }

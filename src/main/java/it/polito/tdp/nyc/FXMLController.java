@@ -5,7 +5,12 @@
 package it.polito.tdp.nyc;
 
 import java.net.URL;
+import java.util.List;
+import java.util.Map;
 import java.util.ResourceBundle;
+
+import it.polito.tdp.nyc.model.City;
+import it.polito.tdp.nyc.model.CityDistance;
 import it.polito.tdp.nyc.model.Model;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -39,7 +44,7 @@ public class FXMLController {
     private ComboBox<String> cmbProvider; // Value injected by FXMLLoader
 
     @FXML // fx:id="cmbQuartiere"
-    private ComboBox<?> cmbQuartiere; // Value injected by FXMLLoader
+    private ComboBox<City> cmbQuartiere; // Value injected by FXMLLoader
 
     @FXML // fx:id="txtMemoria"
     private TextField txtMemoria; // Value injected by FXMLLoader
@@ -55,20 +60,74 @@ public class FXMLController {
     
     @FXML // fx:id="tblQuartieri"
     private TableView<?> tblQuartieri; // Value injected by FXMLLoader
+    
+    private boolean grafoCreato = false;
 
     @FXML
     void doCreaGrafo(ActionEvent event) {
     	
+    	txtResult.clear();
+    	String provider = this.cmbProvider.getValue();
+    	
+    	//controllo input 
+    	if (provider.equals("")) {
+    		txtResult.setText("Inserire un valore");
+    	}
+    	
+    	model.creaGrafo(provider);
+    	
+    	txtResult.setText("Grafo creato! +\n#Vertici: " + model.getNumVertici() + "\n#Archi: " + model.getNumArchi());
+    	
+    	grafoCreato = true;
+    	
+    	//aggiungere roba nel combobox
+    	this.cmbQuartiere.getItems().addAll(model.getQuartieri());
     }
 
     @FXML
     void doQuartieriAdiacenti(ActionEvent event) {
     	
+    	txtResult.clear();
+    	//il grafo deve essere creato altrimenti niente
+    	if(!grafoCreato) {
+    		txtResult.appendText("Creare il grafo!");
+    	}
+    	City inputCity = this.cmbQuartiere.getValue();
+    	
+    	if (inputCity == null) {
+    		txtResult.appendText("Inserire citta'");
+    	}
+    	
+    	List<CityDistance> adiacenti = model.getAdiacenti(inputCity);
+    	for (CityDistance c : adiacenti) {
+    		txtResult.appendText(c.getCitta() + " "+ c.getDistanza() + "\n");
+    	}
+    	
+    	
+    	
     }
 
     @FXML
-    void doSimula(ActionEvent event) {
+void doSimula(ActionEvent event) {
+    	
+    	City scelto = cmbQuartiere.getValue();
+    	if(scelto==null) {
+    		txtResult.appendText("Errore: seleziona un quartiere\n");
+    		return;
+    	}
 
+    	int N = 0;
+    	try {
+    		N = Integer.parseInt(txtMemoria.getText());
+    	} catch(NumberFormatException ex) {
+    		txtResult.appendText("Errore: inserire un numero valido\n");
+    		return;
+    	}
+    	
+    	model.simulazione(N, scelto);
+    	
+    	txtResult.appendText("Durata simulazione: "+model.getDurataTotale()+" minuti\n");
+    	txtResult.appendText("Impegni dei tecnici: "+model.getRevisionati()+"\n");
     }
 
     @FXML // This method is called by the FXMLLoader when initialization is complete
@@ -87,6 +146,7 @@ public class FXMLController {
     
     public void setModel(Model model) {
     	this.model = model;
+    	this.cmbProvider.getItems().addAll(model.getProvider());
     }
 
 }
